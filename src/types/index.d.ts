@@ -1,22 +1,24 @@
-export type NodeType = "start" | "email" | "wait" | "condition";
+export type NodeType = "Start" | "Email" | "Wait" | "Condition";
 
 export interface BaseNodeData {
   id: string;
   type: NodeType;
-  label: string;
 }
 
 export interface EmailNodeData extends BaseNodeData {
+  type: "Email";
   title: string;
   content: string;
 }
 
 export interface WaitNodeData extends BaseNodeData {
-  duration: number;
+  type: "Wait";
+  duration: number; // horas
 }
 
 export interface ConditionNodeData extends BaseNodeData {
+  type: "Condition";
   condition: string;
-  trueNodeId?: string;
-  falseNodeId?: string;
 }
+
+export type NodeData = EmailNodeData | WaitNodeData | ConditionNodeData;

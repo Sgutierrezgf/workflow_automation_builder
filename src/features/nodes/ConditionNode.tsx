@@ -1,27 +1,21 @@
-import React, { useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Handle, Position } from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 
-const ConditionNode = ({ data }: any) => {
-  const [condition, setCondition] = useState("");
-
+export function ConditionNode({ data }: any) {
   return (
-    <div className="p-4 bg-white rounded shadow-md border border-green-400">
-      <Handle type="target" position={Position.Top} />
-      <div className="font-bold mb-2">Condition Node</div>
+    <div className="bg-blue-200 p-4 rounded shadow w-40">
+      <div className="font-bold">Condition</div>
       <input
-        className="border p-1 w-full text-sm mb-2"
-        value={condition}
-        onChange={(e) => setCondition(e.target.value)}
-        placeholder="Condición (ej: edad > 18)"
+        type="text"
+        placeholder="Condition"
+        className="w-full mt-2 p-1 border"
+        value={data.condition}
+        onChange={(e) => data.onChange({ ...data, condition: e.target.value })}
       />
-      <div className="flex justify-between mt-2 text-xs text-gray-500">
-        <div>True →</div>
-        <div>False →</div>
-      </div>
-      <Handle type="source" position={Position.Left} id="true" />
-      <Handle type="source" position={Position.Right} id="false" />
+      <Handle type="source" position={Position.Right} id="true" />
+      <Handle type="source" position={Position.Left} id="false" />
+      <Handle type="target" position={Position.Top} />
     </div>
   );
-};
-
-export default ConditionNode;
+}

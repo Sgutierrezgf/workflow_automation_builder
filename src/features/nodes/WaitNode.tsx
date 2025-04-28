@@ -1,24 +1,19 @@
-import React, { useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Handle, Position } from "@xyflow/react";
 
-const WaitNode = ({ data }: any) => {
-  const [duration, setDuration] = useState("");
-
+export function WaitNode({ data }: any) {
   return (
-    <div className="p-4 bg-white rounded shadow-md border border-yellow-400">
-      <Handle type="target" position={Position.Top} />
-      <div className="font-bold mb-2">Wait Node</div>
+    <div className="bg-blue-50 p-4 rounded shadow w-32">
+      <div className="font-bold">Wait</div>
       <input
-        className="border p-1 w-full text-sm"
         type="number"
-        min={0}
-        value={duration}
-        onChange={(e) => setDuration(Number(e.target.value))}
-        placeholder="Horas de espera"
+        placeholder="Hours"
+        className="w-full mt-2 p-1 border"
+        value={data.duration}
+        onChange={(e) => data.onChange({ ...data, duration: +e.target.value })}
       />
-      <Handle type="source" position={Position.Bottom} />
+      <Handle type="source" position={Position.Right} />
+      <Handle type="target" position={Position.Left} />
     </div>
   );
-};
-
-export default WaitNode;
+}

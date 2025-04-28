@@ -1,29 +1,34 @@
-import React, { useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Handle, Position } from "@xyflow/react";
 
-const EmailNode = ({ data }: any) => {
-  const [title, setTitle] = useState(data.label);
-  const [content, setContent] = useState("");
+export function EmailNode({ data }: any) {
+  // Usamos una función para actualizar el estado del nodo
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    data.onChange({ ...data, title: e.target.value });
+  };
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    data.onChange({ ...data, content: e.target.value });
+  };
 
   return (
-    <div className="p-4 bg-white rounded shadow-md border border-blue-400">
-      <Handle type="target" position={Position.Top} />
-      <div className="font-bold mb-2">Email Node</div>
+    <div className="bg-blue-100 p-4 rounded shadow w-40">
+      <div className="font-bold">Email</div>
       <input
-        className="border p-1 mb-2 w-full text-sm"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Título"
+        type="text"
+        placeholder="Title"
+        className="w-full mt-2 p-1 border"
+        value={data.title}
+        onChange={handleTitleChange} // Manejamos el cambio de forma independiente
       />
       <textarea
-        className="border p-1 w-full text-sm"
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder="Contenido"
+        placeholder="Content"
+        className="w-full mt-2 p-1 border"
+        value={data.content}
+        onChange={handleContentChange} // Manejamos el cambio de forma independiente
       />
-      <Handle type="source" position={Position.Bottom} />
+      <Handle type="source" position={Position.Right} />
+      <Handle type="target" position={Position.Left} />
     </div>
   );
-};
-
-export default EmailNode;
+}

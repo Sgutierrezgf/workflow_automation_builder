@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Handle, Position } from "@xyflow/react";
 
-const FalseNode = ({ data }: any) => {
+export function FalseNode({ data }: any) {
   return (
     <div className="p-4 bg-red-100 rounded shadow-md border border-red-400 w-40 text-center">
       <Handle type="target" position={Position.Top} />
@@ -9,6 +10,4 @@ const FalseNode = ({ data }: any) => {
       </div>
     </div>
   );
-};
-
-export default FalseNode;
+}

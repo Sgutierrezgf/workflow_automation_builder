@@ -1,10 +1,6 @@
-import { NodeType } from "../types";
-
-export const NODE_TYPES: NodeType[] = [
-  "start",
-  "email",
-  "wait",
-  "condition",
-  "true",
-  "false",
-];
+export const NODE_TYPES = {
+  START: "Start",
+  EMAIL: "Email",
+  WAIT: "Wait",
+  CONDITION: "Condition",
+} as const;

@@ -1,13 +1,13 @@
-import React from "react";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// import React from "react";
 import { Handle, Position } from "@xyflow/react";
 
-const StartNode = ({ data }: any) => {
+export function StartNode({ data }: any) {
   return (
-    <div className="p-4 bg-white rounded-full shadow-md border border-purple-400 flex items-center justify-center">
-      <Handle type="source" position={Position.Bottom} />
-      <div className="font-bold">Start</div>
+    <div className="bg-red-200 p-4 rounded-full shadow w-24 h-24 flex items-center justify-center text-center">
+      Start
+      <Handle type="source" position={Position.Right} />
     </div>
   );
-};
-
-export default StartNode;
+}

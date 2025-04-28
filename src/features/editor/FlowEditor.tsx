@@ -3,93 +3,108 @@ import {
   ReactFlow,
   addEdge,
   Background,
+  Connection,
   Controls,
+  MiniMap,
   useEdgesState,
   useNodesState,
-  Connection,
   Node,
+  Edge,
   ReactFlowProvider,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import NodeList from "../nodes/NodeList";
-
-import EmailNode from "../nodes/EmailNode";
-import WaitNode from "../nodes/WaitNode";
-import ConditionNode from "../nodes/ConditionNode";
-import StartNode from "../nodes/StartNode";
 import {
-  saveFlowToLocalStorage,
-  loadFlowFromLocalStorage,
-} from "../../utils/helperFunctions";
-import TrueNode from "../nodes/TrueNode";
-import FalseNode from "../nodes/FalseNode";
+  EmailNode,
+  WaitNode,
+  ConditionNode,
+  StartNode,
+  TrueNode,
+  FalseNode,
+} from "../nodes";
 
-const FlowEditor = () => {
+const nodeTypes = {
+  Email: EmailNode,
+  Wait: WaitNode,
+  Condition: ConditionNode,
+  Start: StartNode,
+  True: TrueNode,
+  False: FalseNode,
+};
+
+export function FlowEditor() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [selectedNode, setSelectedNode] = React.useState<Node | null>(null);
-
-  const onConnect = useCallback(
-    (connection: Connection) => {
-      setEdges((eds) => addEdge(connection, eds));
-    },
-    [setEdges]
-  );
-
-  const nodeTypes = {
-    email: EmailNode,
-    wait: WaitNode,
-    condition: ConditionNode,
-    start: StartNode,
-    trueNode: TrueNode,
-    falseNode: FalseNode,
-  };
 
   useEffect(() => {
-    const savedFlow = loadFlowFromLocalStorage();
-    if (savedFlow) {
-      setNodes(savedFlow.nodes || []);
-      setEdges(savedFlow.edges || []);
-    }
-  }, []);
-
-  // Guardar flujo cada vez que cambia
-  useEffect(() => {
-    saveFlowToLocalStorage(nodes, edges);
+    const flow = { nodes, edges };
+    localStorage.setItem("flow", JSON.stringify(flow));
   }, [nodes, edges]);
+
+  useEffect(() => {
+    const savedFlow = localStorage.getItem("flow");
+    if (savedFlow) {
+      const flow = JSON.parse(savedFlow);
+      setNodes(flow.nodes || []);
+      setEdges(flow.edges || []);
+    }
+  }, [setEdges, setNodes]);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Delete" && selectedNode) {
-        setNodes((nds) => nds.filter((node) => node.id !== selectedNode.id));
-        setEdges((eds) =>
-          eds.filter(
-            (edge) =>
-              edge.source !== selectedNode.id && edge.target !== selectedNode.id
-          )
-        );
-        setSelectedNode(null);
+      if (event.key === "Delete" || event.key === "Backspace") {
+        setNodes((nds) => nds.filter((node) => !node.selected));
+        setEdges((eds) => eds.filter((edge) => !edge.selected));
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedNode, setNodes, setEdges]);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [setEdges, setNodes]);
+
+  const onConnect = useCallback((connection: Connection) => {
+    setEdges((eds) => addEdge(connection, eds));
+  }, []);
+
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
-      const type = event.dataTransfer.getData(
-        "application/reactflow"
-      ) as keyof typeof nodeTypes;
-      const position = { x: event.clientX - 250, y: event.clientY }; // Ajuste para aside
+      const type = event.dataTransfer.getData("application/reactflow");
+      const position = { x: event.clientX, y: event.clientY };
+
+      if (type === "Start" && nodes.some((node) => node.type === "Start")) {
+        alert("Solo puede haber un nodo Start.");
+        return;
+      }
+
+      const id = `${+new Date()}`;
+
       const newNode: Node = {
-        id: `${type}_${+new Date()}`,
+        id,
         type,
         position,
-        data: { label: `${type} node` },
+        data: {
+          title: "",
+          content: "",
+          duration: 0,
+          condition: "",
+          onChange: (newData: any) => {
+            setNodes((nds) =>
+              nds.map((node) => {
+                if (node.id === id) {
+                  return { ...node, data: newData };
+                }
+                return node;
+              })
+            );
+          },
+        },
       };
-      setNodes((nds) => nds.concat(newNode));
+
+      setNodes((nds) => [...nds, newNode]);
     },
-    [setNodes]
+    [nodes, setNodes]
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -97,100 +112,102 @@ const FlowEditor = () => {
     event.dataTransfer.dropEffect = "move";
   }, []);
 
-  const resetFlow = () => {
-    setNodes([]);
-    setEdges([]);
-    localStorage.removeItem("workflow-data");
-  };
-
-  const validateFlow = () => {
-    const startNodes = nodes.filter((node) => node.type === "start");
-
-    // 1. Debe haber exactamente 1 Start
-    if (startNodes.length !== 1) {
-      alert("Debe haber exactamente un nodo de tipo Start.");
-      return false;
-    }
-
-    const startNode = startNodes[0];
-
-    // 2. Start debe estar conectado
-    const startConnections = edges.filter(
-      (edge) => edge.source === startNode.id
-    );
-
-    if (startConnections.length === 0) {
-      alert("El nodo Start debe estar conectado a otro nodo.");
-      return false;
-    }
-
-    return true;
-  };
-
   const exportFlow = () => {
-    if (!validateFlow()) return; // Si no es válido, no seguimos
+    if (nodes.length === 0) {
+      alert("No hay nodos para exportar.");
+      return;
+    }
 
-    const flow = { nodes, edges };
-    const blob = new Blob([JSON.stringify(flow, null, 2)], {
-      type: "application/json",
+    // Crear IDs tipo node-1, node-2, etc.
+    const idMapping = nodes.reduce((acc, node, index) => {
+      acc[node.id] = `node-${index + 1}`;
+      return acc;
+    }, {} as Record<string, string>);
+
+    const exportedNodes = nodes.map((node, index) => {
+      const nextNode = nodes[index + 1];
+
+      return {
+        id: idMapping[node.id],
+        type: node.type,
+        data: {
+          title: node.data?.title || "",
+          content: node.data?.content || "",
+          duration: node.data?.duration || 0,
+          condition: node.data?.condition || "",
+        },
+        next: nextNode ? idMapping[nextNode.id] : null,
+      };
     });
-    const url = URL.createObjectURL(blob);
 
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "workflow.json";
-    a.click();
-    URL.revokeObjectURL(url);
+    const exportJson = {
+      start: idMapping[nodes[0].id],
+      nodes: exportedNodes,
+    };
+
+    console.info(JSON.stringify(exportJson, null, 2));
+  };
+
+  const onNodeDelete = (nodeId: string) => {
+    setNodes((nds) => nds.filter((n) => n.id !== nodeId));
+    setEdges((eds) =>
+      eds.filter((e) => e.source !== nodeId && e.target !== nodeId)
+    );
+  };
+
+  const onNodeDoubleClick = (_: any, node: Node) => {
+    if (confirm(`¿Eliminar nodo ${node.id}?`)) {
+      onNodeDelete(node.id);
+    }
+  };
+
+  const clearFlow = () => {
+    if (confirm("¿Seguro que quieres limpiar todo el flow?")) {
+      setNodes([]);
+      setEdges([]);
+    }
   };
 
   return (
     <ReactFlowProvider>
-      <div className="flex h-screen">
-        <NodeList />
-        <div className="flex-1 h-full" onDrop={onDrop} onDragOver={onDragOver}>
+      <div className="flex w-full h-[90vh]">
+        <div
+          className="flex-1 bg-gray-50"
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+        >
           <ReactFlow
-            nodes={nodes.map((node) => ({
-              ...node,
-              style: {
-                ...node.style,
-                border: selectedNode?.id === node.id ? "2px solid #3b82f6" : "", // borde azul si está seleccionado
-                borderRadius: "6px",
-              },
-            }))}
+            nodes={nodes}
             edges={edges}
+            nodeTypes={nodeTypes}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
-            nodeTypes={nodeTypes}
+            onNodeDoubleClick={onNodeDoubleClick}
             fitView
-            onNodeClick={(event, node) => setSelectedNode(node)}
           >
-            <Background />
             <Controls />
+            <Background />
+            <MiniMap />
           </ReactFlow>
-          <aside className="absolute top-0 right-0 p-4 bg-white w-72 h-full overflow-auto shadow-lg">
-            <h3 className="text-lg font-bold mb-2">Datos en JSON</h3>
-
-            <button
-              onClick={resetFlow}
-              className="mb-4 px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 w-full text-sm"
-            >
-              Resetear Flujo
-            </button>
-            <button
-              onClick={exportFlow}
-              className="mb-4 px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 w-full text-sm"
-            >
-              Exportar JSON
-            </button>
-            <pre className="text-xs">
-              {JSON.stringify({ nodes, edges }, null, 2)}
-            </pre>
-          </aside>
         </div>
+
+        <aside className="w-52 bg-white shadow-md p-4 flex flex-col space-y-4">
+          <button
+            onClick={exportFlow}
+            className="bg-green-500 text-white p-2 rounded"
+          >
+            Export JSON
+          </button>
+
+          <button
+            onClick={clearFlow}
+            className="bg-red-500 text-white p-2 rounded"
+          >
+            Limpiar Flow
+          </button>
+        </aside>
       </div>
     </ReactFlowProvider>
   );
-};
-
-export default FlowEditor;
+}

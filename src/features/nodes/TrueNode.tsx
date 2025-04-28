@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Handle, Position } from "@xyflow/react";
 
-const TrueNode = ({ data }: any) => {
+export function TrueNode({ data }: any) {
   return (
     <div className="p-4 bg-green-100 rounded shadow-md border border-green-400 w-40 text-center">
       <Handle type="target" position={Position.Top} />
@@ -9,6 +10,6 @@ const TrueNode = ({ data }: any) => {
       </div>
     </div>
   );
-};
+}
 
 export default TrueNode;

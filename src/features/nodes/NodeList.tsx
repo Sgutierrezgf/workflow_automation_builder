@@ -1,26 +1,33 @@
 import React from "react";
-import { NODE_TYPES } from "../../constans/appConstants";
 
-const NodeList = () => {
+const nodeTypes = [
+  { type: "Start", label: "Start" },
+  { type: "Email", label: "Email" },
+  { type: "Wait", label: "Wait" },
+  { type: "Condition", label: "Condition" },
+  { type: "True", label: "True" },
+  { type: "False", label: "False" },
+];
+
+export function NodeList() {
   const onDragStart = (event: React.DragEvent, nodeType: string) => {
     event.dataTransfer.setData("application/reactflow", nodeType);
     event.dataTransfer.effectAllowed = "move";
   };
 
   return (
-    <aside className="w-40 p-4 bg-gray-100">
-      {NODE_TYPES.map((type) => (
+    <aside className="p-4 bg-gray-100">
+      <h3 className="font-bold mb-4">Nodes</h3>
+      {nodeTypes.map((node) => (
         <div
-          key={type}
-          onDragStart={(event) => onDragStart(event, type)}
+          key={node.type}
+          onDragStart={(event) => onDragStart(event, node.type)}
           draggable
-          className="p-2 my-2 bg-white rounded shadow cursor-grab"
+          className="mb-2 p-2 bg-white shadow cursor-pointer text-center"
         >
-          {type}
+          {node.label}
         </div>
       ))}
     </aside>
   );
-};
-
-export default NodeList;
+}
