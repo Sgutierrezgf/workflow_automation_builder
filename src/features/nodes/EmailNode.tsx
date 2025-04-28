@@ -7,7 +7,7 @@ export function EmailNode({ data }: any) {
     data.onChange({ ...data, title: e.target.value });
   };
 
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleContentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     data.onChange({ ...data, content: e.target.value });
   };
 
@@ -16,13 +16,14 @@ export function EmailNode({ data }: any) {
       <div className="font-bold">Email</div>
       <input
         type="text"
-        placeholder="Title"
+        placeholder="Nombre"
         className="w-full mt-2 p-1 border"
         value={data.title}
         onChange={handleTitleChange} // Manejamos el cambio de forma independiente
       />
-      <textarea
-        placeholder="Content"
+      <input
+        type="email"
+        placeholder="Email"
         className="w-full mt-2 p-1 border"
         value={data.content}
         onChange={handleContentChange} // Manejamos el cambio de forma independiente

@@ -21,6 +21,14 @@ import {
   TrueNode,
   FalseNode,
 } from "../nodes";
+import {
+  saveFlowToLocalStorage,
+  loadFlowFromLocalStorage,
+  handleKeyDownDelete,
+  handleDropNode,
+  exportFlowJson,
+  clearFlow,
+} from "../../utils/helperFunctions"; // Importamos las funciones auxiliares
 
 const nodeTypes = {
   Email: EmailNode,
@@ -36,25 +44,16 @@ export function FlowEditor() {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   useEffect(() => {
-    const flow = { nodes, edges };
-    localStorage.setItem("flow", JSON.stringify(flow));
+    saveFlowToLocalStorage(nodes, edges); // Guardamos en el localStorage cuando cambian los nodos o bordes
   }, [nodes, edges]);
 
   useEffect(() => {
-    const savedFlow = localStorage.getItem("flow");
-    if (savedFlow) {
-      const flow = JSON.parse(savedFlow);
-      setNodes(flow.nodes || []);
-      setEdges(flow.edges || []);
-    }
+    loadFlowFromLocalStorage(setNodes, setEdges); // Cargamos el flujo desde el localStorage al iniciar
   }, [setEdges, setNodes]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Delete" || event.key === "Backspace") {
-        setNodes((nds) => nds.filter((node) => !node.selected));
-        setEdges((eds) => eds.filter((edge) => !edge.selected));
-      }
+      handleKeyDownDelete(event, setNodes, setEdges); // Lógica para eliminar nodos y bordes
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -69,40 +68,7 @@ export function FlowEditor() {
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
-      event.preventDefault();
-      const type = event.dataTransfer.getData("application/reactflow");
-      const position = { x: event.clientX, y: event.clientY };
-
-      if (type === "Start" && nodes.some((node) => node.type === "Start")) {
-        alert("Solo puede haber un nodo Start.");
-        return;
-      }
-
-      const id = `${+new Date()}`;
-
-      const newNode: Node = {
-        id,
-        type,
-        position,
-        data: {
-          title: "",
-          content: "",
-          duration: 0,
-          condition: "",
-          onChange: (newData: any) => {
-            setNodes((nds) =>
-              nds.map((node) => {
-                if (node.id === id) {
-                  return { ...node, data: newData };
-                }
-                return node;
-              })
-            );
-          },
-        },
-      };
-
-      setNodes((nds) => [...nds, newNode]);
+      handleDropNode(event, nodes, setNodes); // Lógica para crear nuevos nodos
     },
     [nodes, setNodes]
   );
@@ -113,39 +79,7 @@ export function FlowEditor() {
   }, []);
 
   const exportFlow = () => {
-    if (nodes.length === 0) {
-      alert("No hay nodos para exportar.");
-      return;
-    }
-
-    // Crear IDs tipo node-1, node-2, etc.
-    const idMapping = nodes.reduce((acc, node, index) => {
-      acc[node.id] = `node-${index + 1}`;
-      return acc;
-    }, {} as Record<string, string>);
-
-    const exportedNodes = nodes.map((node, index) => {
-      const nextNode = nodes[index + 1];
-
-      return {
-        id: idMapping[node.id],
-        type: node.type,
-        data: {
-          title: node.data?.title || "",
-          content: node.data?.content || "",
-          duration: node.data?.duration || 0,
-          condition: node.data?.condition || "",
-        },
-        next: nextNode ? idMapping[nextNode.id] : null,
-      };
-    });
-
-    const exportJson = {
-      start: idMapping[nodes[0].id],
-      nodes: exportedNodes,
-    };
-
-    console.info(JSON.stringify(exportJson, null, 2));
+    exportFlowJson(nodes); // Exportamos el flujo como JSON
   };
 
   const onNodeDelete = (nodeId: string) => {
@@ -161,11 +95,8 @@ export function FlowEditor() {
     }
   };
 
-  const clearFlow = () => {
-    if (confirm("¿Seguro que quieres limpiar todo el flow?")) {
-      setNodes([]);
-      setEdges([]);
-    }
+  const clearAllFlow = () => {
+    clearFlow(setNodes, setEdges); // Limpiar el flujo
   };
 
   return (
@@ -201,7 +132,7 @@ export function FlowEditor() {
           </button>
 
           <button
-            onClick={clearFlow}
+            onClick={clearAllFlow}
             className="bg-red-500 text-white p-2 rounded"
           >
             Limpiar Flow
